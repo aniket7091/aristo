@@ -258,6 +258,40 @@ All API endpoints are prefixed with `/api`. Protected routes require a `Bearer` 
 | `/owner-signup`  | Owner Signup         | Register as a café owner                 |
 | `/admin`         | Admin Dashboard      | Menu, order, and blog management panel   |
 
+## ☁️ Deployment
+
+Bristo uses a decoupled architecture for deployment:
+
+1. **Frontend (Netlify)**: The `public/` directory is deployed to Netlify as a static site.
+2. **Backend (VPS/AWS)**: The Node.js Express server and MongoDB database run on a VPS/AWS using Docker and `docker-compose`.
+
+### CI/CD Pipeline (GitHub Actions)
+A fully automated CI/CD pipeline is configured in `.github/workflows/deploy.yml`. 
+Every push to the `main` branch will:
+1. Lint the code.
+2. Build the Docker image and push it to the GitHub Container Registry.
+3. Automatically SSH into the VPS and deploy the new image.
+
+### Frontend Deployment (Netlify)
+A `netlify.toml` file is included in the repository. It automatically publishes the `public/` directory and sets up an API proxy to route all `/api/*` requests to your VPS backend.
+1. Connect your repository to Netlify.
+2. Update the `YOUR_VPS_IP_OR_DOMAIN` in the `netlify.toml` file to point to your live VPS backend.
+3. Deploy!
+
+---
+
+## 📸 Screenshots
+
+*(Add screenshots of your live deployment here!)*
+
+| Customer Menu | Order Confirmation |
+|:---:|:---:|
+| ![Menu Placeholder](public/images/menu-placeholder.jpg) | ![Order Placeholder](public/images/order-placeholder.jpg) |
+
+| Owner Dashboard | Blog Management |
+|:---:|:---:|
+| ![Dashboard Placeholder](public/images/dashboard-placeholder.jpg) | ![Blog Placeholder](public/images/blog-placeholder.jpg) |
+
 ---
 
 ## 🔐 Authentication
