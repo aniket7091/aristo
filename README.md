@@ -258,24 +258,42 @@ All API endpoints are prefixed with `/api`. Protected routes require a `Bearer` 
 | `/owner-signup`  | Owner Signup         | Register as a café owner                 |
 | `/admin`         | Admin Dashboard      | Menu, order, and blog management panel   |
 
-## ☁️ Deployment
+## ☁️ Deployment (Free DevOps Architecture)
 
-Bristo uses a decoupled architecture for deployment:
+Bristo uses a decoupled architecture to deploy a full Dockerized environment for **free** using Oracle Cloud.
 
 1. **Frontend (Netlify)**: The `public/` directory is deployed to Netlify as a static site.
-2. **Backend (VPS/AWS)**: The Node.js Express server and MongoDB database run on a VPS/AWS using Docker and `docker-compose`.
+2. **Backend (Oracle Cloud)**: The Node.js Express server and MongoDB database run on an **Always Free ARM VPS** using Docker and `docker-compose`.
 
 ### CI/CD Pipeline (GitHub Actions)
 A fully automated CI/CD pipeline is configured in `.github/workflows/deploy.yml`. 
 Every push to the `main` branch will:
 1. Lint the code.
-2. Build the Docker image and push it to the GitHub Container Registry.
+2. Build the Docker image for both `amd64` and `arm64` (for Oracle) and push it to the GitHub Container Registry.
 3. Automatically SSH into the VPS and deploy the new image.
 
+### 🚀 Oracle Cloud Setup Guide (The "Cheat Sheet")
+To replicate this free DevOps setup, follow these steps:
+
+1. **Create Account**: Sign up for [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/).
+2. **Create Instance**: Go to Compute > Instances > Create Instance.
+   - **Image**: Ubuntu 22.04
+   - **Shape**: `VM.Standard.A1.Flex` (ARM Ampere). Select up to 4 OCPUs and 24GB RAM.
+   - **SSH Keys**: Download the Private Key (you will need this for GitHub Actions!).
+3. **Open Firewalls**: 
+   - In Oracle: Go to the instance's VCN > Subnet > Default Security List. Add Ingress Rules for Port `80` (HTTP), `443` (HTTPS), and `5000` (API, optional).
+   - In Ubuntu (via SSH): Run `sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT` and save.
+4. **Install Docker**: SSH into the server and run `sudo apt install docker.io docker-compose-v2 -y`. Add your user to the docker group: `sudo usermod -aG docker ubuntu`.
+5. **Configure GitHub Secrets**: Go to your GitHub Repo > Settings > Secrets and add:
+   - `VPS_HOST`: Your Oracle Public IP
+   - `VPS_USERNAME`: `ubuntu`
+   - `VPS_SSH_KEY`: The private key you downloaded earlier.
+   - Add your `.env` variables (`MONGODB_URI`, `JWT_SECRET`, etc.).
+
 ### Frontend Deployment (Netlify)
-A `netlify.toml` file is included in the repository. It automatically publishes the `public/` directory and sets up an API proxy to route all `/api/*` requests to your VPS backend.
+A `netlify.toml` file is included in the repository. It automatically publishes the `public/` directory and sets up an API proxy to route all `/api/*` requests to your Oracle VPS backend.
 1. Connect your repository to Netlify.
-2. Update the `YOUR_VPS_IP_OR_DOMAIN` in the `netlify.toml` file to point to your live VPS backend.
+2. Update the `YOUR_VPS_IP_OR_DOMAIN` in the `netlify.toml` file to point to your live Oracle IP (e.g. `http://150.136.x.x`).
 3. Deploy!
 
 ---
