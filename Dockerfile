@@ -1,19 +1,19 @@
-# ── Stage 1: install production dependencies ──────────────────────────────────
+# ── Stage 1: Install production dependencies ────────────────────────────────
 FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-# Copy manifests first for better layer caching
+# Copy package manifests first for better Docker layer caching
 COPY package.json package-lock.json ./
 
-# Install only production deps
+# Install only production dependencies
 RUN npm ci --omit=dev
 
 
-# ── Stage 2: final runtime image ──────────────────────────────────────────────
+# ── Stage 2: Final runtime image ────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
-# Add dumb-init so Node receives proper OS signals (graceful shutdown)
+# Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
 # Create a non-root user for security
@@ -21,24 +21,27 @@ RUN addgroup -S bristo && adduser -S bristo -G bristo
 
 WORKDIR /app
 
-# Copy production node_modules from the deps stage
+# Copy production dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy application source (excluding anything in .dockerignore)
+# Copy application source code
 COPY . .
 
-# Ensure the non-root user owns the app files
+# Set ownership
 RUN chown -R bristo:bristo /app
 
+# Run as non-root user
 USER bristo
 
-# App listens on this port (matches PORT env var default in server.js)
+# Application port
 EXPOSE 5000
 
-# Health-check: hit the /api/health endpoint every 30 s
+# Health check endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD wget -qO- http://localhost:5000/api/health || exit 1
 
-# Use dumb-init as PID 1 to handle signals correctly
+# Use dumb-init as PID 1
 ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
 CMD ["node", "server.js"]
