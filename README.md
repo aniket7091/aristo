@@ -258,42 +258,40 @@ All API endpoints are prefixed with `/api`. Protected routes require a `Bearer` 
 | `/owner-signup`  | Owner Signup         | Register as a café owner                 |
 | `/admin`         | Admin Dashboard      | Menu, order, and blog management panel   |
 
-## ☁️ Deployment (Free DevOps Architecture)
+## ☁️ Deployment (Free DevOps Architecture via GitHub Student Pack)
 
-Bristo uses a decoupled architecture to deploy a full Dockerized environment for **free** using Oracle Cloud.
+Bristo uses a decoupled architecture to deploy a full Dockerized environment for **free** using DigitalOcean (via the GitHub Student Developer Pack).
 
 1. **Frontend (Netlify)**: The `public/` directory is deployed to Netlify as a static site.
-2. **Backend (Oracle Cloud)**: The Node.js Express server and MongoDB database run on an **Always Free ARM VPS** using Docker and `docker-compose`.
+2. **Backend (DigitalOcean)**: The Node.js Express server and MongoDB database run on a **DigitalOcean Droplet VPS** using Docker and `docker-compose`.
 
 ### CI/CD Pipeline (GitHub Actions)
 A fully automated CI/CD pipeline is configured in `.github/workflows/deploy.yml`. 
 Every push to the `main` branch will:
 1. Lint the code.
-2. Build the Docker image for both `amd64` and `arm64` (for Oracle) and push it to the GitHub Container Registry.
-3. Automatically SSH into the VPS and deploy the new image.
+2. Build the Docker image and push it to the GitHub Container Registry.
+3. Automatically SSH into the DigitalOcean VPS and deploy the new image.
 
-### 🚀 Oracle Cloud Setup Guide (The "Cheat Sheet")
-To replicate this free DevOps setup, follow these steps:
+### 🚀 DigitalOcean Setup Guide (The "Cheat Sheet")
+If you have a `.edu` email, follow these steps to get your free VPS:
 
-1. **Create Account**: Sign up for [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/).
-2. **Create Instance**: Go to Compute > Instances > Create Instance.
-   - **Image**: Ubuntu 22.04
-   - **Shape**: `VM.Standard.A1.Flex` (ARM Ampere). Select up to 4 OCPUs and 24GB RAM.
-   - **SSH Keys**: Download the Private Key (you will need this for GitHub Actions!).
-3. **Open Firewalls**: 
-   - In Oracle: Go to the instance's VCN > Subnet > Default Security List. Add Ingress Rules for Port `80` (HTTP), `443` (HTTPS), and `5000` (API, optional).
-   - In Ubuntu (via SSH): Run `sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT` and save.
-4. **Install Docker**: SSH into the server and run `sudo apt install docker.io docker-compose-v2 -y`. Add your user to the docker group: `sudo usermod -aG docker ubuntu`.
-5. **Configure GitHub Secrets**: Go to your GitHub Repo > Settings > Secrets and add:
-   - `VPS_HOST`: Your Oracle Public IP
-   - `VPS_USERNAME`: `ubuntu`
-   - `VPS_SSH_KEY`: The private key you downloaded earlier.
+1. **Get Free Credits**: Go to the [GitHub Student Developer Pack](https://education.github.com/pack) and sign up with your `.edu` email. Once approved, claim your free DigitalOcean credits ($200 for 1 year).
+2. **Create a Droplet**: Log into DigitalOcean and click **Create Droplet**.
+   - **Region**: Choose the one closest to you.
+   - **Image**: Go to the "Marketplace" tab and search for **Docker**. Select the pre-built Docker image on Ubuntu.
+   - **Size**: Choose the Basic Regular SSD ($4 or $6/month, which is covered by your free credits).
+   - **Authentication**: Choose **SSH Key**. Generate an SSH key on your local machine (`ssh-keygen`), upload the public key to DigitalOcean, and save the *private key* securely (you will need it for GitHub!).
+3. **Configure GitHub Secrets**: Go to your GitHub Repo > Settings > Secrets and variables > Actions, and add:
+   - `VPS_HOST`: Your Droplet's Public IPv4 Address.
+   - `VPS_USERNAME`: `root`
+   - `VPS_SSH_KEY`: The Private SSH key you generated in Step 2.
    - Add your `.env` variables (`MONGODB_URI`, `JWT_SECRET`, etc.).
+4. **No Firewall Config Needed!**: Because we used the Docker marketplace image, ports 80 and 443 are already open!
 
 ### Frontend Deployment (Netlify)
-A `netlify.toml` file is included in the repository. It automatically publishes the `public/` directory and sets up an API proxy to route all `/api/*` requests to your Oracle VPS backend.
+A `netlify.toml` file is included in the repository. It automatically publishes the `public/` directory and sets up an API proxy to route all `/api/*` requests to your DigitalOcean VPS backend.
 1. Connect your repository to Netlify.
-2. Update the `YOUR_VPS_IP_OR_DOMAIN` in the `netlify.toml` file to point to your live Oracle IP (e.g. `http://150.136.x.x`).
+2. Update the `YOUR_VPS_IP_OR_DOMAIN` in the `netlify.toml` file to point to your live Droplet IP (e.g. `http://104.236.x.x`).
 3. Deploy!
 
 ---
